@@ -105,7 +105,7 @@
 > hash(ele2) = 10010001
 > ```
 
-> ![](./hyperloglog/images/buckget.png)
+> ![](https://github.com/yujinliang/c10k_c10m/blob/master/hyperloglog/images/buckget.png)
 
 > HLL 与LL的主要区别就是对所有桶求平均值时，前者采用`调和平均值`， 后者采用`几何平均值` ！
 >
