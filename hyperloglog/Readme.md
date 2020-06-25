@@ -150,7 +150,7 @@
 > $$
 > p = log_2 (m)
 > $$
-> 注意：m代表桶数。
+> 注意：m代表桶数, p代表桶数的二进制位数。
 >
 > ```c
 > switch (p) {
@@ -194,11 +194,13 @@
 >      return c;
 > ```
 >
-> 
-
-
-
 > #注意以上内容摘取自`https://www.jianshu.com/p/55defda6dcd2` ， 精彩好文，可深入学习之！
+
+> Redis对于一个输入的字符串，首先得到64位的hash值，用前14位来定位桶的位置（共有 ![[公式]](https://www.zhihu.com/equation?tex=2%5E%7B14%7D) ，即16384个桶）。后面50位即为伯努利过程，每个桶有6bit，记录第一次出现1的位置count，如果count>oldcount，就用count替换oldcount。
+>
+> 注意：64位二进制hash值中，第一次出现１的位置（以右端或左端为基准）有６４个，　所以每个桶内只需要６个bit就可以记录了！！！ln64 = 6 , 因为hash值截取１４位作为桶编号，　所以只只需对剩下的５０bit来统计第一次出现１的位置，　有５０个位置，５个bit的桶最多记录３２个位置，所以向上ceil取整，６个bit可以记录６４个位置，　最终定位６bit桶。
+
+
 
 
 
@@ -271,6 +273,8 @@ HLL 实现代码分析
 > `https://blog.csdn.net/weixin_46233323/article/details/105242847`
 >
 > `https://blog.csdn.net/zdk930519/article/details/54137476`
+>
+> `https://zhuanlan.zhihu.com/p/58519480`
 
 
 
