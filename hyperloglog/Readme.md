@@ -77,7 +77,7 @@
 #HLL 核心算法 #摘引自`https://www.jianshu.com/p/55defda6dcd2` ， 感谢原作者，非常棒的技术文章！
 #hash(a element) = 0b1110100110...  之所以首先对每一个集合元素执行hash , 因为hash结果为整数，并且均匀分布在一定范围之内！
 #若分布不均匀，则直接导致估值不准确！！！
-#默认小端字节序
+#默认小端字节序,其实无关大小端字节序上面的HLL数学原理和结论都是一样的！
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 输入：一个集合
 输出：集合的基数
@@ -187,11 +187,11 @@
 > 输入：桶数组a，b。它们的长度都是n
 > 输出：新的桶数组c
 > 算法：
->      c = c[n];
->      for (i=0; i<n; i++){
->          c[i]=max(a[i], b[i]);
->      }
->      return c;
+>   c = c[n];
+>   for (i=0; i<n; i++){
+>       c[i]=max(a[i], b[i]);
+>   }
+>   return c;
 > ```
 >
 > #注意以上内容摘取自`https://www.jianshu.com/p/55defda6dcd2` ， 精彩好文，可深入学习之！
@@ -204,7 +204,42 @@
 
 
 
-HLL 实现代码分析
+- HLL 实现代码分析
+
+```java
+//https://www.jianshu.com/p/55defda6dcd2
+
+    private static double rsd(int log2m) {
+        return 1.106 / Math.sqrt(Math.exp(log2m * Math.log(2)));
+    }
+
+    public boolean offerHashed(int hashedValue) {
+        // j 代表第几个桶,取hashedValue的前log2m位即可
+        // j 介于 0 到 m
+        final int j = hashedValue >>> (Integer.SIZE - log2m);
+        // r代表 除去前log2m位剩下部分的前导零 + 1
+        final int r = Integer.numberOfLeadingZeros((hashedValue << this.log2m) | (1 << (this.log2m - 1)) + 1) + 1;
+        return registerSet.updateIfGreater(j, r);
+    }
+
+public class RegisterSet {
+
+    public final static int LOG2_BITS_PER_WORD = 6;  //2的6次方是64
+    public final static int REGISTER_SIZE = 5; 
+            /**
+             * 分配(m / 6)个int32给M
+             *
+             * 因为一个register占五位，所以每个int（32位）有6个register
+             */
+    public void set(int position, int value) {
+        int bucketPos = position / LOG2_BITS_PER_WORD;
+        int shift = REGISTER_SIZE * (position - (bucketPos * LOG2_BITS_PER_WORD));
+        this.M[bucketPos] = (this.M[bucketPos] & ~(0x1f << shift)) | (value << shift);
+    }
+}
+```
+
+
 
 
 
