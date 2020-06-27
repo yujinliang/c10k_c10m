@@ -216,14 +216,23 @@
     public boolean offerHashed(int hashedValue) {
         // j 代表第几个桶,取hashedValue的前log2m位即可
         // j 介于 0 到 m
+        //无符号数右移运算符>>>，空位补０　
+        //p=log2m 其实就是可以存储｀桶index｀的二进制bit位数
+        //这行就是通过右移将｀桶index｀部分提取出来，其他部分右移位丢掉。
         final int j = hashedValue >>> (Integer.SIZE - log2m);
+        
+        
         // r代表 除去前log2m位剩下部分的前导零 + 1
+        //左移１bit 等于乘以２，　右端补０
+        //没看懂，因为(hashedValue << this.log2m)就够了，为什么还要或还要加１？？？
         final int r = Integer.numberOfLeadingZeros((hashedValue << this.log2m) | (1 << (this.log2m - 1)) + 1) + 1;
         return registerSet.updateIfGreater(j, r);
     }
 
 public class RegisterSet {
 
+    //这里定义为常量，不太理解，　按理说流程应该如此：　rsd => m => log2m => 既是桶index的二进制bit位数，
+    //再加上已知hash value 是64bit长，　=> 64 - p => 每个桶的二进制bit位数（必须可以存储｀除去桶部分后剩余hash串的左端前导０最大个数｀）　
     public final static int LOG2_BITS_PER_WORD = 6;  //2的6次方是64
     public final static int REGISTER_SIZE = 5; 
             /**
@@ -232,12 +241,67 @@ public class RegisterSet {
              * 因为一个register占五位，所以每个int（32位）有6个register
              */
     public void set(int position, int value) {
-        int bucketPos = position / LOG2_BITS_PER_WORD;
+        
+        int bucketPos = position / LOG2_BITS_PER_WORD; //定位到对应int32, 一个int32包含６个桶，每个桶５bit.
+        //在int32中定位桶，　我觉的把M定义为：[u8]的数组更易操作，只是可能浪费一点内存！
         int shift = REGISTER_SIZE * (position - (bucketPos * LOG2_BITS_PER_WORD));
         this.M[bucketPos] = (this.M[bucketPos] & ~(0x1f << shift)) | (value << shift);
     }
 }
 ```
+
+> 理解上面代码需要了解对数公式：
+> $$
+> Math.sqrt(x) = \sqrt{x}   
+> $$
+>
+> $$
+> Math.exp(x) = e^x
+> $$
+>
+> $$
+> Math.log(x) = log_e x = ln x
+> $$
+>
+> $$
+> log_a M^n = nlog_a M  -> \ln M^n = n\ln M
+> $$
+>
+> $$
+> a^{log_a b} = b
+> $$
+>
+> 所以函数 private static double rsd(int log2m) 表达的数学意思为：
+> $$
+> p = log_2(m) -> m = 2^p
+> $$
+> 
+> $$
+> rsd = \frac{1.106}{ \sqrt{e^{p * \ln 2}}}
+> $$
+>   
+> $$
+> rsd = \frac{1.106}{ \sqrt{e^{\ln{2^p}}}} =  \frac{1.106}{\sqrt{2^p}} = \frac{1.106}{\sqrt{m}}
+> $$
+> 注意：原来公式中常量为：１.04，　而实现者采用1.106 为常量，可能这样微调可以提高估值精度，不必纠结。
+>
+>   `public void set(int position, int value)`函数中位操作的意思：
+>
+>   where: position: [0,m) , int -> int32
+>
+> 比如：positon = 1, value = 5 , 计算 `int shift = REGISTER_SIZE * (position - (bucketPos * LOG2_BITS_PER_WORD));`
+>
+> 则shift = 5 * ( 1- (0*6) ); => 5;
+>
+> 现在开始位移操作定位到桶： `this.M[bucketPos] = (this.M[bucketPos] & ~(0x1f << shift)) | (value << shift);`
+>
+> 0x1f => 32bit integer => (00000000) (00000000) (00000000)(00011111) => 左移５bit 右补０　＝> (00000000) (00000000) (00000011) (11100000)
+>
+> => 看，已经定位到第１个桶（５个１），其右侧５个０为第０个桶，　其左侧为其他桶　=> 取反，消除第一个桶旧值,其他桶与１按位与，则保持不变。　
+>
+> ＝> (11111111) (11111111)(11111100)(00011111)　＝> value = 5 => int32 （00000000）(00000000) (00000000) (00000101) => 左移５bit,右补０
+>
+> => (00000000) (00000000) (00000000) (10100000) => 看，value的值已经被移动到第１个桶的位置，５bit一一对应，只要按位或就实现了将value值存入对应桶中的操作。
 
 
 
