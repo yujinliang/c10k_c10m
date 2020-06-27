@@ -208,7 +208,7 @@
 
 ```java
 //https://www.jianshu.com/p/55defda6dcd2
-
+////理解下面代码的关键在于：他是以二进制的左端为基准，比如一个二进制value, 结构为： 桶index二进制部分　＋　 hash值其余二进制部分：左端
     private static double rsd(int log2m) {
         return 1.106 / Math.sqrt(Math.exp(log2m * Math.log(2)));
     }
@@ -302,6 +302,12 @@ public class RegisterSet {
 > ＝> (11111111) (11111111)(11111100)(00011111)　＝> value = 5 => int32 （00000000）(00000000) (00000000) (00000101) => 左移５bit,右补０
 >
 > => (00000000) (00000000) (00000000) (10100000) => 看，value的值已经被移动到第１个桶的位置，５bit一一对应，只要按位或就实现了将value值存入对应桶中的操作。
+
+
+
+------
+
+
 
 
 
