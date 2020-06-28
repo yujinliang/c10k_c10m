@@ -224,7 +224,12 @@
         
         // r代表 除去前log2m位剩下部分的前导零 + 1
         //左移１bit 等于乘以２，　右端补０
-        //没看懂，因为(hashedValue << this.log2m)就够了，为什么还要或还要加１？？？
+        //没看懂，因为(hashedValue << this.log2m)就够了，为什么还要或还要这么复杂？其后的bit运算好像对统计左端前导０个数没什么影响？！！！
+        //
+        //Integer.numberOfLeadingZeros（i） in java 返回无符号整型i的最高非零位前面（左面）的0的个数
+        //如果i为负数，这个方法将会返回0，符号位为1.
+　  //比如说，10的二进制表示为 0000 0000 0000 0000 0000 0000 0000 1010
+       //java的整型长度为32位。那么这个方法返回的就是28.
         final int r = Integer.numberOfLeadingZeros((hashedValue << this.log2m) | (1 << (this.log2m - 1)) + 1) + 1;
         return registerSet.updateIfGreater(j, r);
     }
@@ -321,7 +326,7 @@ public class RegisterSet {
 >
 > 检测方法核心C伪码表示：　`u16 x = 0xeeff;    u8 *ptr = &x; if ( ptr[0] = 0xff) 　｛小端字节序｝　else {大端字节序}`
 >
-> 注意：&x 取到的内存地址始终为此变量的最低字节地址。
+> 注意：&x 取到的内存地址始终为此变量的最低字节地址。我们在做bit运算时，始终以数值纸面书写顺序为准，避免被具体的大小端字节序弄晕。
 
 
 
@@ -392,6 +397,8 @@ public class RegisterSet {
 > `https://blog.csdn.net/zdk930519/article/details/54137476`
 >
 > `https://zhuanlan.zhihu.com/p/58519480`
+>
+> `https://www.jianshu.com/p/2c1be41f6e59`
 
 
 
